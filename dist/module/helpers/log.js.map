@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/helpers/log.ts"],
+  "sourcesContent": ["import chalk from \"chalk\";\nimport dayjs from \"dayjs\";\n\n// Initialize the package name\nconst packageName = chalk.white.bold.bgGreenBright(\" @advena/supabase \");\n\n/**\n * Logs a message with a timestamp.\n *\n * @param message - The message to log.\n */\nexport const log = (\n    message: string,\n    level?: \"debug\" | \"info\" | \"error\" | \"warn\",\n    throws = false,\n    verbose?: boolean,\n) => {\n    // Check if the message should be verbose\n    if (verbose && process?.env?.NODE_ENV !== \"development\") return;\n\n    // Get the current time\n    const time = chalk.gray(dayjs().format(\"HH:mm:ss\"));\n\n    // Parameterise the message\n    const output = `${packageName} ${time} ${message}`;\n\n    // Log the message\n    console.log(output);\n\n    // Check if the message should throw\n    if (throws) throw new Error(output);\n};\n"],
+  "mappings": "AAAA,OAAOA,MAAW,QAClB,OAAOC,MAAW,QAGlB,MAAMC,EAAcF,EAAM,MAAM,KAAK,cAAc,oBAAoB,EAO1DG,EAAM,CACfC,EACAC,EACAC,EAAS,GACTC,IACA,CAEA,GAAIA,EAAqD,OAGzD,MAAMC,EAAOR,EAAM,KAAKC,EAAK,EAAG,OAAO,UAAU,CAAC,EAG5CQ,EAAS,GAAGP,CAAW,IAAIM,CAAI,IAAIJ,CAAO,GAMhD,GAHA,QAAQ,IAAIK,CAAM,EAGdH,EAAQ,MAAM,IAAI,MAAMG,CAAM,CACtC",
+  "names": ["chalk", "dayjs", "packageName", "log", "message", "level", "throws", "verbose", "time", "output"]
+}

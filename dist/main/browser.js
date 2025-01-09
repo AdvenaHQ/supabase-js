@@ -1,0 +1,2 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.globalOptions=void 0,exports.useSupabase=t;const a=require("@supabase/ssr"),n=require("./helpers/parseOptions");async function t(r){const{options:e,authStrategy:u}=(0,n.parseOptions)(r,void 0,"browser");let s="";return u==="key"&&(s=e?.auth?.keys?.publishable),(0,a.createBrowserClient)(e?.supabaseUrl,s,{...e.config})}exports.default=t;
+//# sourceMappingURL=browser.js.map

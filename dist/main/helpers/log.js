@@ -1,0 +1,2 @@
+"use strict";var r=exports&&exports.__importDefault||function(e){return e&&e.__esModule?e:{default:e}};Object.defineProperty(exports,"__esModule",{value:!0}),exports.log=void 0;const o=r(require("chalk")),u=r(require("dayjs")),n=o.default.white.bold.bgGreenBright(" @advena/supabase "),i=(e,c,a=!1,l)=>{if(l)return;const s=o.default.gray((0,u.default)().format("HH:mm:ss")),t=`${n} ${s} ${e}`;if(console.log(t),a)throw new Error(t)};exports.log=i;
+//# sourceMappingURL=log.js.map
