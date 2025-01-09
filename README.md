@@ -1,4 +1,4 @@
-# ⚡ @advena/supabase [![npm](https://img.shields.io/npm/v/@advena/supabase)](https://www.npmjs.com/package/@advena/supabase)
+# ⚡ @advenahq/supabase-js [![npm](https://img.shields.io/npm/v/@advenahq/supabase-js)](https://www.npmjs.com/package/@advenahq/supabase-js)
 
 This package provides a high-performance, type-safe, reusable wrapper for utilising the Supabase client in Next.js projects in both server and browser contexts (SSR/SSG and client). The package is designed to be secure, efficient, and easy to use, and provides a simple way to interact with the Supabase client in a Next.js project.
 
@@ -13,7 +13,7 @@ This package provides a high-performance, type-safe, reusable wrapper for utilis
 ## 📦 Installation
 To install the package, run the following command:
 ```bash
-pnpm add @advena/supabase
+pnpm add @advenahq/supabase-js
 ```
 
 ## ⚙️ Configuring the Package
@@ -205,8 +205,8 @@ A shared configuration file might look like this:
 ```typescript
 // lib/supabase.ts
 
-import { useSupabase as _useSupabase } from "@advena/supabase";
-import type { UseSupabaseOptions } from "@advena/supabase/types";
+import { useSupabase as _useSupabase } from "@advenahq/supabase-js";
+import type { UseSupabaseOptions } from "@advenahq/supabase-js/types";
 
 import type { Database } from "../path/to/database.types"; // https://supabase.com/docs/reference/javascript/typescript-support
 
@@ -304,7 +304,7 @@ export default async function Page() {
 Alternatively, as mentioned, you can initialise and configure the package inline:
 
 ```tsx
-import { useSupabase } from "@advena/supabase";
+import { useSupabase } from "@advenahq/supabase-js";
 
 export default async function Page() {
     // Create a new Supabase client, configuring it inline
@@ -326,7 +326,7 @@ export default async function Page() {
 If environment variables are set, the package will automatically use them to configure the client. If not, you can pass the configuration options directly to the `useSupabase` hook. This means that you can simply:
 
 ```tsx
-import { useSupabase } from "@advena/supabase";
+import { useSupabase } from "@advenahq/supabase-js";
 
 export default async function Page() {
     // Create a new Supabase client, relying on environment variables for configuration
@@ -347,7 +347,7 @@ You can optionally create a Supabase client with the Supabase service role. This
 ```tsx
 // lib/supabase.ts
 
-import { useSupabase as _useSupabase } from "@advena/supabase";
+import { useSupabase as _useSupabase } from "@advenahq/supabase-js";
 
 export const useSupabase = async () =>
     await _useSupabase({
@@ -362,7 +362,7 @@ The client can also be used in the browser. This is useful for client-side opera
 // components/MyComponent.tsx
 "use client";
 
-import { useSupabase } from '@advena/supabase/browser';
+import { useSupabase } from '@advenahq/supabase-js/browser';
 
 function MyComponent() {
     // Create a new Supabase browser client
