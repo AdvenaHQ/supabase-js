@@ -261,13 +261,6 @@ export default async function Page() {
         .limit(1)
         .single();
 
-    const { data, error } = await supabase
-        .from<Database.User>("users")
-        .select("*")
-        .eq("id", 1)
-        .limit(1)
-        .single({ cacheTTL: 60 * 60 * 24 }); // Cache the response for 24 hours
-
     ...
 }
 ```
