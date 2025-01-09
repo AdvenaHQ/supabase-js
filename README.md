@@ -1,25 +1,230 @@
-# ⚡ @advenahq/supabase-js [![npm](https://img.shields.io/npm/v/@advenahq/supabase-js)](https://www.npmjs.com/package/@advenahq/supabase-js)
+![@advenahq/supabase-js](Github-Repo-Header---supabase-js.png)
 
-This package provides a high-performance, type-safe, reusable wrapper for utilising the Supabase client in Next.js projects in both server and browser contexts (SSR/SSG and client). The package is designed to be secure, efficient, and easy to use, and provides a simple way to interact with the Supabase client in a Next.js project.
+This package provides a high-performance, reusable, type-safe [Supabase](https://supabase.com/) client wrapper for TypeScript-based Next.js projects in both server and browser contexts (SSR/SSG and client). The package is designed to be secure, efficient, and easy to use, and provides a simple way to interact with your Supabase project.
 
 ## 👏 Features
-- **Type-Safe**: Written in TypeScript and provides custom, type-safe extended interfaces for working with the Supabase client safely.
-- **Server-side Cache Support**: The package supports a number of cache providers, including [supacache](https://github.com/AdvenaHQ/supacache), [Upstash Redis](https://upstash.com/docs/redis/sdks/ts/overview), and vanilla redis servers (via [ioredis](https://github.com/redis/ioredis)), to dramatically improve performance for expensive and common queries.
-- **Full Supabase Client Support**: Provides full support for the Supabase client, including all methods and properties, such as Realtime, REST API, Storage, Auth, etc.
-- **Row Level Security (RLS) Support**: Both native and custom Row Level Security (RLS) patterns are supported by allowing you to pass custom JWTs at initialisation for use in the Authorization header (or utilise in-built roles).
-- **Service Role Support**: Painlessly create Supabase clients with your service role for server-side operations that require elevated permissions.
-- **Security-First Design**: The package is designed with security in mind and provides a safe and secure way to interact with your Supabase project. It automatically identifies risky behaviour and accounts for it, and scrubs sensitive configurations from the browser client at initialisation.
+- **Type-Safe**: Written in TypeScript with a focus on strong types. Provides a developer-friendly interface for working with the Supabase client safely.
+- **Server-side Cache Support**: Supports a number of cache providers, including [**⚡supacache**](https://github.com/AdvenaHQ/supacache), [Upstash Redis](https://upstash.com/docs/redis/sdks/ts/overview), and custom redis servers, to dramatically improve performance for expensive and common queries. The extended client provides a `.cache()` method for granular, per-query cache control.
+- **Full Supabase Client Support**: Maintains feature parity with the [supabase-js](https://www.npmjs.com/package/@supabase/supabase-js) client, with full support for vanilla all methods and properties, such as Realtime, REST API, Storage, Auth, etc.
+- **Row Level Security (RLS) Support**: Both native and custom Row Level Security (RLS) patterns are supported. Pass custom JWTs at initialisation for use in the Authorization header, or use the built-in roles.
+- **Service Role Support**: Painlessly create Supabase clients with your service_role for server-side operations that require elevated permissions.
+- **Security-First Design**: Developed with security-first principles. Automatically identifies risky behaviour and corrects, scrubs sensitive configurations from the browser client at initialisation, etc.
 
-## 📦 Installation
+## 📦 Installation [![npm](https://img.shields.io/npm/v/@advenahq/supabase-js)](https://www.npmjs.com/package/@advenahq/supabase-js)
 To install the package, run the following command:
 ```bash
-pnpm add @advenahq/supabase-js
+npm i @advenahq/supabase-js
 ```
 
-## ⚙️ Configuring the Package
-The package can be initialised and configured either inline (on-the-fly) or using a **shared configuration file (recommended)**.
+## 🚗 Usage
+Once you've installed the library, you're pretty much ready to go. Import the `useSupabase` hook from the package and use it to create a new Supabase server client. All of the [standard Supabase client methods and properties](https://supabase.com/docs/reference/javascript/select) are available on the client and the usage is exactly the same, except for the configuration options that can be passed to the `useSupabase` hook.
 
-For ease of use, it is recommended to set the following environment variables in your project's root:
+You can configure the client either inline (on-the-fly) or using a **[shared configuration file](#shared-configuration) (recommended)**. Here's how to get started using an inline configuration:
+
+```tsx
+import { useSupabase } from "@advenahq/supabase-js";
+
+export default async function Page() {
+    // Create a new Supabase client, configuring it inline
+    const supabase = await useSupabase({
+        role: "anon", // Use the anonymous role
+        supabaseUrl: process.env.UPV_SECRETS_SUPABASE_URL as string, // Your project's Supabase URL
+        auth: {
+            keys: {
+                secret: process.env.UPV_SECRETS_SUPABASE_SERVICEROLE_KEY as string, // Your project's service_role (secret) key
+                publishable: process.env.UPV_SECRETS_SUPABASE_ANON_KEY as string, // Your project's anon (publishable) key
+            },
+        },
+    });
+
+    // Then, just use the client as you normally would
+
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", 1)
+        .limit(1)
+        .single();
+
+    // ...
+}
+```
+
+---
+
+### 💾 Caching 
+
+The client supports a number of cache providers, including [**⚡supacache**](https://github.com/AdvenaHQ/supacache), [Upstash Redis](https://upstash.com/docs/redis/sdks/ts/overview), and custom redis servers.
+
+Caching can be applied either globally (this is the default behaviour) or [per-query using the `.cache()` method](#the-cache-method). The global cache configuration is set at initialisation and applies to all queries made with the client. The `.cache()` method allows you to cache the response of a query for a specified amount of time.
+
+> [!NOTE]
+> It's important to note that caching is per-query, so if you're using queries with highly dynamic filters or constructions, you may not see the full benefits of caching. Caching is most effective when your queries are fairly consistent, as is typically the case with database operations.
+
+Configuring a cache provider is simple and can be done using the `cache` configuration option. Supported provider configurations are provided [in the advanced configuration section](#advanced-configuration).
+
+Configuring the client with a cache provider will automatically cache all responses from the Supabase API for the specified amount of time.
+
+---
+
+### The `.cache()` Method
+
+If you have configured the client with [⚡supacache](https://github.com/AdvenaHQ/supacache), you can use the `.cache()` method to cache the response of a query for a specified amount of time. This is useful for expensive queries that are common and can be cached for a period of time to improve performance.
+
+It is important to note that **caching is only supported on `SELECT` queries**. Here's an example of how to use the `.cache()` method:
+
+```tsx
+import { useSupabase } from "@advenahq/supabase-js";
+
+// ...
+
+// Use the Supabase client exported by the shared configuration
+const supabase = await useSupabase();
+
+// Fetch data from the users table
+const { data, error } = await supabase
+    .from("users")
+    .cache(86400) // Cache the response for 24 hours (86400 seconds = 24 hours)
+    .select("*")
+    .eq("id", 1);
+
+// ...
+```
+
+The `.cache()` method must be called immediately after `.from()` and before any other methods. It accepts a TTL in seconds as it's only argument. This is the amount of time that the response of **this query** will be cached for. 
+
+---
+
+### Shared Configuration
+
+Configuring your client using a shared configuration file is recommended. This allows you to easily reuse the configuration across your application and ensures that your client is always initialised with the same settings. 
+
+Here's an example of a shared configuration file, initialised with [supacache](https://github.com/AdvenaHQ/supacache) for caching, and database schema types generated using the [Supabase CLI](https://supabase.com/docs/reference/javascript/typescript-support#generating-typescript-types):
+
+```typescript
+// lib/supabase.ts
+
+import { useSupabase as _useSupabase } from "@advenahq/supabase-js";
+import type { UseSupabaseOptions } from "@advenahq/supabase-js/types";
+import type { Database } from "../path/to/database.types"; // https://supabase.com/docs/reference/javascript/typescript-support
+
+export const useSupabase = async (
+    role: "service_role" | "anon" = "service_role", // The role to use for the Supabase client, either "service_role" or "anon". Defaults to "service_role".
+    extendConfig?: Partial<UseSupabaseOptions> | undefined, // Optional configuration to extend the default Supabase options.
+) =>
+    await _useSupabase<Database>({
+        cache: {
+            provider: "supacache", // Use supacache for caching
+            supacache: {
+                url: "https://supacache.mycloudflareworker.workers.dev", // Your supacache Worker URL
+                serviceKey:
+                    process.env.UPV_SECRETS_SUPABASE_URL as string, // Your supacache service key
+            },
+        },
+        role: "anon", // Use the anonymous role by default (this can be swapped out per-query by passing the "service_role" in the `role` parameter)
+        supabaseUrl: process.env.UPV_SECRETS_SUPABASE_URL as string, // Your project's Supabase URL
+        auth: {
+            keys: {
+                secret: process.env.UPV_SECRETS_SUPABASE_SERVICEROLE_KEY, // Your project's service_role (secret) key
+                publishable: process.env.UPV_SECRETS_SUPABASE_ANON_KEY, // Your project's anon (publishable) key
+            },
+        },
+    });
+```
+
+You can then use the shared configuration file to create a new Supabase client in your application as you normally would:
+
+```tsx
+// app/page.ts
+
+import { useSupabase } from "../lib/useSupabase";
+
+export default async function Page() {
+    // Use the Supabase client exported by the shared configuration
+    const supabase = await useSupabase();
+
+    // Fetch data from the users table
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", 1)
+        .limit(1)
+        .single();
+
+    ...
+}
+```
+
+or, *even better*, using the database types and custom cache ttl:
+
+```tsx
+// app/page.ts
+
+import { useSupabase } from "../lib/useSupabase";
+import type { Tables } from "../path/to/database.types"; // https://supabase.com/docs/reference/javascript/typescript-support
+
+export default async function Page() {
+    // Use the Supabase client exported by the shared configuration
+    const supabase = await useSupabase();
+
+    // Fetch data from the users table
+    const { data, error } = await supabase
+        .from("users")
+        .cache(86400) // Cache the response for 24 hours (86400 seconds = 24 hours)
+        .select("*")
+        .eq("id", 1)
+        .limit(1)
+        .single<Tables<"users">>(); // Use the database types to type the response
+
+    // ...
+}
+```
+
+---
+
+### Usage in the Browser (Client)
+
+The client can also be used in the browser. This is useful for client-side operations that require authentication. 
+
+> [!IMPORTANT]
+> In order to use the client in the browser, you must import the `useSupabase` hook from the browser entrypoint: `import { useSupabase } from '@advenahq/supabase-js/browser';`
+
+Here's an example of how to use the client in the browser:
+
+```tsx
+// components/MyComponent.tsx
+"use client";
+
+import { useSupabase } from '@advenahq/supabase-js/browser'; // Import the `useSupabase` hook from the browser entrypoint
+
+function MyComponent() {
+    // Create a new Supabase browser client
+    const supabase = useSupabase({
+        supabaseUrl: process.env.UPV_SECRETS_SUPABASE_URL as string, // Your project's Supabase URL
+        auth: {
+            keys: {
+                publishable: process.env.UPV_SECRETS_SUPABASE_ANON_KEY as string, // Your project's anon (publishable) key
+            },
+        },
+    });
+
+    // Use the client in the browser as you normally would
+    supabase
+        .channel('room1')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'countries' }, payload => {
+            console.log('Change received!', payload)
+        })
+        .subscribe();
+
+    // ...
+}
+```
+
+---
+
+### Environment Variables
+
+You can optionally use environment variables to configure the client. This is useful for keeping sensitive information out of your codebase. These are the environment variables that the client is configured to use by default:
 
 ```bash
 # Retrieve these settings from your Supabase project's settings page (https://supabase.com/dashboard/project/_vnwgrcyvvigzihuvcutp_/settings/api)
@@ -37,7 +242,42 @@ UPV_SECRETS_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 UPV_SECRETS_SUPABASE_JWT_SECRET=<your-supabase-jwt-secret>
 ```
 
-You can configure the package (and client) by passing configuration options to the `useSupabase` hook. The following configuration options are available:
+If environment variables are set, the package will automatically use them to configure the client. This means that you can simply:
+
+```tsx
+import { useSupabase } from "@advenahq/supabase-js";
+
+export default async function Page() {
+    // Create a new Supabase client, relying on environment variables for configuration
+    const supabase = await useSupabase();
+
+    // ...
+}
+```
+
+## 💼 Using Roles
+
+You can optionally create a Supabase client with the Supabase service role. This is useful for server-side operations that require elevated permissions but should be done so with great caution as **the service role has full access to your database and bypasses all Row Level Security (RLS) policies**. By default, the client is created with the anonymous (anon) role.
+
+```tsx
+import { useSupabase } from "@advenahq/supabase-js";
+
+// ...
+
+const supabase = await useSupabase({
+    // your other configuration options ...
+
+    role: "service_role", // Use the service role
+
+    // your other configuration options ...
+});
+
+// ...
+```
+
+## ⚙️ Advanced Configuration
+
+The following configuration options are available for the `useSupabase` hook:
 
 ```typescript
 {
@@ -193,183 +433,6 @@ You can configure the package (and client) by passing configuration options to t
             publishable?: string | undefined;
         };
     };
-}
-```
-
-## Configuring the client
-
-### Shared Configuration
-
-A shared configuration file might look like this:
-
-```typescript
-// lib/supabase.ts
-
-import { useSupabase as _useSupabase } from "@advenahq/supabase-js";
-import type { UseSupabaseOptions } from "@advenahq/supabase-js/types";
-
-import type { Database } from "../path/to/database.types"; // https://supabase.com/docs/reference/javascript/typescript-support
-
-/**
- * Asynchronously initializes and returns a Supabase client with the specified role and configuration.
- *
- * @param role - The role to use for the Supabase client, either "service_role" or "anon". Defaults to "service_role".
- * @param extendConfig - Optional configuration to extend the default Supabase options.
- * 
- * @returns A promise that resolves to the initialized Supabase client.
- */
-export const useSupabase = async (
-    role: "service_role" | "anon" = "service_role",
-    extendConfig?: Partial<UseSupabaseOptions> | undefined,
-) =>
-    await _useSupabase<Database>({
-        cache: {
-            provider: "supacache",
-            supacache: {
-                url: "https://supacache.mycloudflareworker.workers.dev",
-                serviceKey:
-                    "your-service-key",
-            },
-        },
-        role: "anon",
-        supabaseUrl: process.env.UPV_SECRETS_SUPABASE_URL as string, // Your project's Supabase URL
-        auth: {
-            keys: {
-                secret: process.env.UPV_SECRETS_SUPABASE_SERVICEROLE_KEY, // Your project's service_role (secret) key
-                publishable: process.env.UPV_SECRETS_SUPABASE_ANON_KEY, // Your project's anon (publishable) key
-            },
-        },
-    });
-```
-
-you would then use the client as you normally would in your application:
-
-```tsx
-// app/page.ts
-
-import { useSupabase } from "@/lib/useSupabase";
-
-export default async function Page() {
-    // Use the Supabase client exported by the shared configuration
-    const supabase = await useSupabase();
-
-    // Fetch data from the users table
-    const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", 1)
-        .limit(1)
-        .single();
-
-    ...
-}
-```
-
-or, even better, using the database types and custom cache ttl:
-
-```tsx
-// app/page.ts
-
-import { useSupabase } from "@/lib/useSupabase";
-
-import type { Tables } from "../path/to/database.types"; // https://supabase.com/docs/reference/javascript/typescript-support
-
-export default async function Page() {
-    // Use the Supabase client exported by the shared configuration
-    const supabase = await useSupabase();
-
-    // Fetch data from the users table
-    const { data, error } = await supabase
-        .from("users")
-        .cache(86400) // Cache the response for 24 hours (86400 seconds = 24 hours)
-        .select("*")
-        .eq("id", 1)
-        .limit(1)
-        .single<Tables<"users">>();
-
-    ...
-}
-```
-
----
-
-### Inline configuration 
-Alternatively, as mentioned, you can initialise and configure the package inline:
-
-```tsx
-import { useSupabase } from "@advenahq/supabase-js";
-
-export default async function Page() {
-    // Create a new Supabase client, configuring it inline
-    const supabase = await useSupabase({
-        role: "anon",
-        supabaseUrl: process.env.UPV_SECRETS_SUPABASE_URL as string,
-        auth: {
-            keys: {
-                secret: process.env.UPV_SECRETS_SUPABASE_SERVICEROLE_KEY,
-                publishable: process.env.UPV_SECRETS_SUPABASE_ANON_KEY,
-            },
-        },
-    });
-
-    ...
-}
-```
-
-If environment variables are set, the package will automatically use them to configure the client. If not, you can pass the configuration options directly to the `useSupabase` hook. This means that you can simply:
-
-```tsx
-import { useSupabase } from "@advenahq/supabase-js";
-
-export default async function Page() {
-    // Create a new Supabase client, relying on environment variables for configuration
-    const supabase = await useSupabase();
-
-    ...
-}
-```
-
-## 🚗 Basic Usage
-Use the `useSupabase` hook to create a new Supabase client. The client can be used to interact with the Supabase API, including querying the database, using Realtime, and interacting with the Storage and Auth services.
-
-You then use the created client as you would the standard Supabase client from the `@supabase/supabase-js` package. Comprehensive documentation is available on the [Supabase website](https://supabase.com/docs/reference/javascript/select).
-
-## 💼 Using Roles
-You can optionally create a Supabase client with the Supabase service role. This is useful for server-side operations that require elevated permissions but should be done so with great caution as **the service role has full access to your database and bypasses all Row Level Security (RLS) policies**. By default, the client is created with the anonymous (anon) role.
-
-```tsx
-// lib/supabase.ts
-
-import { useSupabase as _useSupabase } from "@advenahq/supabase-js";
-
-export const useSupabase = async () =>
-    await _useSupabase({
-        role: "service_role", // Use the service role
-        ...
-    });
-```
-
-## 👋 Client (Browser) Usage
-The client can also be used in the browser. This is useful for client-side operations that require authentication.
-```tsx
-// components/MyComponent.tsx
-"use client";
-
-import { useSupabase } from '@advenahq/supabase-js/browser';
-
-function MyComponent() {
-    // Create a new Supabase browser client
-    const supabase = useSupabase();
-
-    // Use the client in the browser as you normally would
-    supabase
-        .channel('room1')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'countries' }, payload => {
-            console.log('Change received!', payload)
-        })
-        .subscribe();
-
-    ...
 }
 ```
 
